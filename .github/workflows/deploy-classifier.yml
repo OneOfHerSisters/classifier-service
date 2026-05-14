@@ -5,6 +5,11 @@ on:
     branches: [develop]
     paths:
       - 'services/classifier-service/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   deploy:
