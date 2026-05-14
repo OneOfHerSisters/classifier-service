@@ -31,11 +31,27 @@ gcloud artifacts repositories describe "${AR_REPO}" \
   --location="${REGION}" >/dev/null
 
 echo "==> Building image via Cloud Build: ${IMAGE}"
-gcloud builds submit \
+BUILD_ID=$(gcloud builds submit \
   --config="${SCRIPT_DIR}/cloudbuild.yaml" \
   --substitutions="_AR_REPO=${AR_REPO},COMMIT_SHA=${IMAGE_TAG:-latest}" \
   --project="${PROJECT_ID}" \
-  "${REPO_ROOT}"
+  --async \
+  --format="value(id)" \
+  "${REPO_ROOT}")
+echo "    Build ID: ${BUILD_ID}"
+echo "    Waiting for build..."
+while true; do
+  STATUS=$(gcloud builds describe "${BUILD_ID}" \
+    --project="${PROJECT_ID}" \
+    --format="value(status)" 2>/dev/null || echo "UNKNOWN")
+  echo "    Status: ${STATUS}"
+  case "${STATUS}" in
+    SUCCESS) break ;;
+    FAILURE|TIMEOUT|CANCELLED|INTERNAL_ERROR) echo "Build failed: ${STATUS}" >&2; exit 1 ;;
+    UNKNOWN|"") echo "Unable to read build status" >&2; exit 1 ;;
+  esac
+  sleep 15
+done
 
 echo "==> Deploying to Cloud Run..."
 gcloud run deploy "${NAME}" \
