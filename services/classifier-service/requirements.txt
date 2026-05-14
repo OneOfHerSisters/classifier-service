@@ -5,4 +5,5 @@ google-cloud-storage==2.16.0
 google-cloud-firestore==2.16.0
 transformers==4.51.0
 torch==2.6.0
+accelerate==1.6.0
 numpy==1.26.4
