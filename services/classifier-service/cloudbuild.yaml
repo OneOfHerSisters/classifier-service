@@ -1,7 +1,3 @@
-# Configure the Cloud Build trigger with:
-#   Build configuration file: services/classifier-service/cloudbuild.yaml
-#   Substitution variable: _AR_REPO (Artifact Registry repository name)
-#   Cloud Build SA needs roles/artifactregistry.writer on that repo
 steps:
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
@@ -23,6 +19,24 @@ steps:
       - push
       - --all-tags
       - europe-central2-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/music-genres-classification
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - music-genres-classification
+      - --image=europe-central2-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/music-genres-classification:$COMMIT_SHA
+      - --region=$_REGION
+      - --project=$PROJECT_ID
+      - --port=8080
+      - --memory=8Gi
+      - --cpu=2
+      - --timeout=300
+      - --min-instances=0
+      - --max-instances=3
+      - --set-env-vars=SONGS_COLLECTION=audio_metadata_dev,SCORES_COLLECTION=audio_genre_scores_dev
+      - --no-allow-unauthenticated
 
 images:
   - europe-central2-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/music-genres-classification:$COMMIT_SHA
